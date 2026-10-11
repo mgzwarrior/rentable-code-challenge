@@ -6,6 +6,7 @@ from django.db import models
 class Tenant(models.Model):
     name = models.CharField(max_length=255)
     unit = models.CharField(max_length=50, blank=True, null=True)
+    pms_tenant_id = models.IntegerField(unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.name

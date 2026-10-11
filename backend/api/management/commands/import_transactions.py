@@ -22,9 +22,9 @@ class Command(BaseCommand):
         for tenant_data in tenants_data:
             tenant_id = tenant_data.get('tenant_id')
             try:
-                tenant = Tenant.objects.get(id=tenant_id)
+                tenant = Tenant.objects.get(pms_tenant_id=tenant_id)
             except Tenant.DoesNotExist:
-                self.stderr.write(f'Tenant with ID {tenant_id} not found. Skipping.')
+                self.stderr.write(f'Tenant with PMS ID {tenant_id} not found. Skipping.')
                 continue
 
             for transaction_data in tenant_data.get('ledger', []):
