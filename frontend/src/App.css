@@ -154,3 +154,19 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+.tenant-search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 80%;
+  margin: 0 auto;
+  color: #555;
+}
+
+.tenant-search input {
+  flex: 0 1 320px;
+  padding: 8px;
+  font-size: 1rem;
+}

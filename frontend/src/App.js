@@ -5,6 +5,7 @@ import TenantLedger from './TenantLedger';
 
 function App() {
   const [selectedTenant, setSelectedTenant] = useState(null);
+  const [search, setSearch] = useState('');
 
   return (
     <div className="App">
@@ -15,7 +16,7 @@ function App() {
         {selectedTenant ? (
           <TenantLedger tenant={selectedTenant} onBack={() => setSelectedTenant(null)} />
         ) : (
-          <TenantList onViewLedger={setSelectedTenant} />
+          <TenantList onViewLedger={setSelectedTenant} search={search} onSearchChange={setSearch} />
         )}
       </main>
     </div>

@@ -39,3 +39,17 @@ test('View Ledger opens that tenant\'s ledger and Back returns to the tenant lis
     expect(await screen.findByText('Alice Wonderland')).toBeInTheDocument();
     expect(screen.queryByText('Rent Charge - January')).not.toBeInTheDocument();
 });
+
+test('the tenant search is kept when returning from a ledger', async () => {
+    render(<App />);
+
+    await screen.findByText('Alice Wonderland');
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search tenants' }), { target: { value: 'daisy' } });
+    fireEvent.click(screen.getByRole('button', { name: 'View Ledger' }));
+    await screen.findByText('Rent Charge - January');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to tenants' }));
+
+    expect(await screen.findByText('Daisy Ridley')).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search tenants' })).toHaveValue('daisy');
+    expect(screen.queryByText('Alice Wonderland')).not.toBeInTheDocument();
+});
