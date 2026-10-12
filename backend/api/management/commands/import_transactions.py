@@ -21,11 +21,15 @@ class Command(BaseCommand):
 
         for tenant_data in tenants_data:
             tenant_id = tenant_data.get('tenant_id')
-            try:
-                tenant = Tenant.objects.get(pms_tenant_id=tenant_id)
-            except Tenant.DoesNotExist:
-                self.stderr.write(f'Tenant with PMS ID {tenant_id} not found. Skipping.')
-                continue
+            tenant = (
+                Tenant.objects.filter(pms_tenant_id=tenant_id).first()
+                or Tenant.objects.filter(pms_tenant_id__isnull=True, name=tenant_data.get('name')).first()
+                or Tenant()
+            )
+            tenant.pms_tenant_id = tenant_id
+            tenant.name = tenant_data.get('name')
+            tenant.unit = tenant_data.get('unit')
+            tenant.save()
 
             for transaction_data in tenant_data.get('ledger', []):
                 Transaction.objects.update_or_create(
