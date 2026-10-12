@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from api.models import Transaction, Tenant
+import argparse
 import requests
 import json
 from datetime import datetime
@@ -7,12 +8,23 @@ from datetime import datetime
 class Command(BaseCommand):
     help = 'Imports transaction data from the integration API into the Django database.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--include-ledgers',
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help='Include tenant ledgers in the PMS request (default: true).',
+        )
+
     def handle(self, *args, **options):
         self.stdout.write('Starting transaction import...')
 
         integration_api_url = "https://kpsaflrfjmhwomxiqrtiplvqem0hfmec.lambda-url.us-east-2.on.aws/api/simulated-pms-integration-api/tenants/"
         try:
-            response = requests.get(integration_api_url)
+            response = requests.get(
+                integration_api_url,
+                params={'includeLedgers': str(options['include_ledgers']).lower()},
+            )
             response.raise_for_status()
             tenants_data = response.json()
         except requests.exceptions.RequestException as e:
