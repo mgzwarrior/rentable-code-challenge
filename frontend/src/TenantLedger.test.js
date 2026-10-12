@@ -1,5 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import TenantLedger from './TenantLedger';
+import { saveBlob } from './download';
+
+jest.mock('./download');
 
 const tenant = { id: 4, name: 'Daisy Ridley', unit: 'C303', pms_tenant_id: 3 };
 
@@ -98,4 +101,51 @@ test('shows an error when the ledger cannot be loaded', async () => {
     render(<TenantLedger tenant={tenant} onBack={() => {}} />);
 
     expect(await screen.findByText('Error loading ledger: HTTP error! status: 500')).toBeInTheDocument();
+});
+
+function mockFetchWithExport(exportResponse) {
+    global.fetch = jest.fn(url => Promise.resolve(
+        url.endsWith('/export/')
+            ? exportResponse
+            : { ok: true, status: 200, json: () => Promise.resolve(ledgerResponse()) }
+    ));
+}
+
+test('Export CSV downloads the ledger file named by the server', async () => {
+    const blob = new Blob(['csv']);
+    mockFetchWithExport({
+        ok: true,
+        status: 200,
+        headers: { get: () => 'attachment; filename="ledger-pms-3-daisy-ridley.csv"' },
+        blob: () => Promise.resolve(blob),
+    });
+    render(<TenantLedger tenant={tenant} onBack={() => {}} />);
+    await screen.findByText('Total charges');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+
+    await waitFor(() => expect(saveBlob).toHaveBeenCalledWith(blob, 'ledger-pms-3-daisy-ridley.csv'));
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/tenants/4/ledger/export/');
+});
+
+test('Export CSV is disabled until the ledger has loaded', async () => {
+    mockFetch(ledgerResponse());
+
+    render(<TenantLedger tenant={tenant} onBack={() => {}} />);
+
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
+    await screen.findByText('Total charges');
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled();
+});
+
+test('shows an error when the export fails', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockFetchWithExport({ ok: false, status: 500 });
+    render(<TenantLedger tenant={tenant} onBack={() => {}} />);
+    await screen.findByText('Total charges');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+
+    expect(await screen.findByText('Error exporting ledger: HTTP error! status: 500')).toBeInTheDocument();
+    expect(saveBlob).not.toHaveBeenCalled();
 });

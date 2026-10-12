@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import NotInPmsBadge from './NotInPmsBadge';
 import { formatMoney } from './money';
+import { saveBlob } from './download';
 
 function balanceSummary(balance) {
     const value = Number(balance);
@@ -28,6 +29,7 @@ function amountCell(transaction, type, className) {
 function TenantLedger({ tenant, onBack }) {
     const [ledger, setLedger] = useState(null);
     const [error, setError] = useState(null);
+    const [exportError, setExportError] = useState(null);
 
     useEffect(() => {
         fetch(`/api/tenants/${tenant.id}/ledger/`)
@@ -44,11 +46,32 @@ function TenantLedger({ tenant, onBack }) {
             });
     }, [tenant.id]);
 
+    function exportCsv() {
+        setExportError(null);
+        fetch(`/api/tenants/${tenant.id}/ledger/export/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const filename = (disposition.match(/filename="([^"]+)"/) || [])[1] || 'ledger.csv';
+                return response.blob().then(blob => saveBlob(blob, filename));
+            })
+            .catch(error => {
+                console.error("Error exporting ledger:", error);
+                setExportError(error);
+            });
+    }
+
     const balance = ledger && balanceSummary(ledger.balance);
 
     return (
         <div className="tenant-ledger">
-            <button onClick={onBack}>Back to tenants</button>
+            <div className="ledger-actions">
+                <button onClick={onBack}>Back to tenants</button>
+                <button onClick={exportCsv} disabled={!ledger}>Export CSV</button>
+            </div>
+            {exportError && <div>Error exporting ledger: {exportError.message}</div>}
             <h2>{tenant.name}</h2>
             <p className="tenant-ledger-meta">
                 Unit {tenant.unit} · {tenant.pms_tenant_id === null ? <NotInPmsBadge /> : `PMS ID ${tenant.pms_tenant_id}`}

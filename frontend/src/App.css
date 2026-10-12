@@ -209,3 +209,8 @@
 .sort-button:hover {
   text-decoration: underline;
 }
+
+.ledger-actions {
+  display: flex;
+  justify-content: space-between;
+}

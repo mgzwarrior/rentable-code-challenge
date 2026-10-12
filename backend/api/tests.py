@@ -1,3 +1,5 @@
+import csv
+import io
 from decimal import Decimal
 
 from django.test import TestCase
@@ -204,3 +206,101 @@ class TransactionListFilterTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {'tenant': 'Must be a tenant ID.'})
+
+
+class TenantLedgerExportTests(TestCase):
+    def setUp(self):
+        self.tenant = Tenant.objects.create(name="William O'Brien", unit='B220', pms_tenant_id=13)
+        self.next_pms_transaction_id = 1
+
+    def add_transaction(self, date, type, amount, description='Test', tenant=None):
+        Transaction.objects.create(
+            tenant=tenant or self.tenant,
+            pms_transaction_id=str(self.next_pms_transaction_id),
+            date=date,
+            type=type,
+            description=description,
+            amount=Decimal(amount),
+        )
+        self.next_pms_transaction_id += 1
+
+    def export(self, tenant=None):
+        return self.client.get(f'/api/tenants/{(tenant or self.tenant).id}/ledger/export/')
+
+    def rows(self, response):
+        return list(csv.reader(io.StringIO(response.content.decode())))
+
+    def test_exports_the_ledger_as_a_csv_download(self):
+        self.add_transaction('2023-01-01', Transaction.CHARGE, '1300.00', 'Rent Charge - January')
+        self.add_transaction('2023-01-03', Transaction.PAYMENT, '800.00', 'Rent Payment - January')
+        self.add_transaction('2023-03-05', Transaction.CHARGE, '-80.00', 'Utility Credit')
+
+        response = self.export()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertEqual(
+            response['Content-Disposition'],
+            'attachment; filename="ledger-pms-13-william-obrien.csv"',
+        )
+        self.assertEqual(self.rows(response), [
+            ['PMS Tenant ID', 'Tenant', 'Unit', 'Date', 'PMS Transaction ID',
+             'Description', 'Charge', 'Payment', 'Balance'],
+            ['13', "William O'Brien", 'B220', '2023-01-01', '1', 'Rent Charge - January', '1300.00', '', '1300.00'],
+            ['13', "William O'Brien", 'B220', '2023-01-03', '2', 'Rent Payment - January', '', '800.00', '500.00'],
+            ['13', "William O'Brien", 'B220', '2023-03-05', '3', 'Utility Credit', '-80.00', '', '420.00'],
+        ])
+
+    def test_export_matches_the_ledger_api(self):
+        self.add_transaction('2023-02-01', Transaction.CHARGE, '500.00')
+        self.add_transaction('2023-01-01', Transaction.CHARGE, '1000.00')
+        self.add_transaction('2023-01-01', Transaction.PAYMENT, '-400.00')
+
+        ledger = self.client.get(f'/api/tenants/{self.tenant.id}/ledger/').json()
+        exported = self.rows(self.export())[1:]
+
+        self.assertEqual(
+            [(row[4], row[8]) for row in exported],
+            [(t['pms_transaction_id'], t['running_balance']) for t in ledger['transactions']],
+        )
+        self.assertEqual(exported[-1][8], ledger['balance'])
+
+    def test_text_with_commas_and_quotes_survives(self):
+        self.add_transaction('2023-01-01', Transaction.CHARGE, '50.00', 'Repair, "kitchen" tap')
+
+        self.assertEqual(self.rows(self.export())[1][5], 'Repair, "kitchen" tap')
+
+    def test_text_that_looks_like_a_formula_is_neutralized(self):
+        self.add_transaction('2023-01-01', Transaction.CHARGE, '50.00', '=HYPERLINK("http://example.com")')
+        self.add_transaction('2023-01-02', Transaction.CHARGE, '50.00', '+1+1')
+        self.add_transaction('2023-01-03', Transaction.CHARGE, '50.00', '-1+1')
+        self.add_transaction('2023-01-04', Transaction.CHARGE, '50.00', '@SUM(A1)')
+
+        descriptions = [row[5] for row in self.rows(self.export())[1:]]
+
+        self.assertEqual(descriptions, [
+            '\'=HYPERLINK("http://example.com")', "'+1+1", "'-1+1", "'@SUM(A1)",
+        ])
+
+    def test_negative_amounts_stay_numeric(self):
+        self.add_transaction('2023-01-01', Transaction.PAYMENT, '-1375.00')
+
+        row = self.rows(self.export())[1]
+
+        self.assertEqual(row[7], '-1375.00')
+        self.assertEqual(row[8], '1375.00')
+
+    def test_empty_ledger_exports_only_the_header(self):
+        self.assertEqual(len(self.rows(self.export())), 1)
+
+    def test_tenant_not_in_the_pms_has_a_blank_pms_tenant_id(self):
+        charlie = Tenant.objects.create(name='Charlie Chaplin', unit='C303')
+        self.add_transaction('2023-01-01', Transaction.CHARGE, '10.00', tenant=charlie)
+
+        response = self.export(charlie)
+
+        self.assertEqual(response['Content-Disposition'], 'attachment; filename="ledger-charlie-chaplin.csv"')
+        self.assertEqual(self.rows(response)[1][0], '')
+
+    def test_unknown_tenant_returns_404(self):
+        self.assertEqual(self.client.get('/api/tenants/999999/ledger/export/').status_code, 404)
