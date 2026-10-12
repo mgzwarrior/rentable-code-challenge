@@ -1,0 +1,17 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('api', '0005_transaction_pms_transaction_id'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='transaction',
+            name='type',
+            field=models.CharField(default='', max_length=20),
+            preserve_default=False,
+        ),
+    ]

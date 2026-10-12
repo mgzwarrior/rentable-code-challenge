@@ -37,6 +37,7 @@ class Command(BaseCommand):
                     defaults={
                         'tenant': tenant,
                         'date': datetime.strptime(transaction_data.get('date'), '%Y-%m-%d').date(),
+                        'type': transaction_data.get('type'),
                         'description': transaction_data.get('description'),
                         'amount': transaction_data.get('amount'),
                     }
