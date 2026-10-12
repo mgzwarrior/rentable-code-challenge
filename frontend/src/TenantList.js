@@ -2,6 +2,50 @@ import React, { useEffect, useState } from 'react';
 import NotInPmsBadge, { NOT_IN_PMS_LABEL } from './NotInPmsBadge';
 import { formatMoney, toCents } from './money';
 
+const SORTABLE_COLUMNS = [
+    { key: 'pms_tenant_id', label: 'PMS ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'unit', label: 'Unit' },
+    { key: 'balance', label: 'Balance', className: 'tenant-balance', firstDirection: 'desc' },
+];
+
+function compareTenants(a, b, column) {
+    if (column === 'balance') {
+        return toCents(a.balance) - toCents(b.balance);
+    }
+    if (column === 'pms_tenant_id') {
+        return a.pms_tenant_id - b.pms_tenant_id;
+    }
+    return String(a[column] ?? '').localeCompare(String(b[column] ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function sortTenants(tenants, sort) {
+    if (!sort.column) {
+        return tenants;
+    }
+    const direction = sort.direction === 'asc' ? 1 : -1;
+    return [...tenants].sort((a, b) => {
+        if (sort.column === 'pms_tenant_id' && (a.pms_tenant_id === null || b.pms_tenant_id === null)) {
+            return (a.pms_tenant_id === null) - (b.pms_tenant_id === null);
+        }
+        return direction * compareTenants(a, b, sort.column);
+    });
+}
+
+function nextSort(sort, column) {
+    if (sort.column !== column.key) {
+        return { column: column.key, direction: column.firstDirection ?? 'asc' };
+    }
+    return { column: column.key, direction: sort.direction === 'asc' ? 'desc' : 'asc' };
+}
+
+function ariaSort(sort, column) {
+    if (sort.column !== column.key) {
+        return 'none';
+    }
+    return sort.direction === 'asc' ? 'ascending' : 'descending';
+}
+
 function matchesSearch(tenant, query) {
     return [tenant.name, tenant.unit ?? '', tenant.pms_tenant_id ?? NOT_IN_PMS_LABEL]
         .some(value => String(value).toLowerCase().includes(query));
@@ -35,7 +79,7 @@ function balanceCell(balance) {
     return <td className="tenant-balance tenant-balance-settled">Settled</td>;
 }
 
-function TenantList({ onViewLedger, search, onSearchChange }) {
+function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }) {
     const [tenants, setTenants] = useState([]);
     const [error, setError] = useState(null);
 
@@ -59,7 +103,7 @@ function TenantList({ onViewLedger, search, onSearchChange }) {
     }
 
     const query = search.trim().toLowerCase();
-    const visibleTenants = tenants.filter(tenant => matchesSearch(tenant, query));
+    const visibleTenants = sortTenants(tenants.filter(tenant => matchesSearch(tenant, query)), sort);
     const summary = summarize(visibleTenants);
 
     return (
@@ -91,10 +135,14 @@ function TenantList({ onViewLedger, search, onSearchChange }) {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>PMS ID</th>
-                                    <th>Name</th>
-                                    <th>Unit</th>
-                                    <th className="tenant-balance">Balance</th>
+                                    {SORTABLE_COLUMNS.map(column => (
+                                        <th key={column.key} className={column.className} aria-sort={ariaSort(sort, column)}>
+                                            <button className="sort-button" onClick={() => onSortChange(nextSort(sort, column))}>
+                                                {column.label}
+                                                {sort.column === column.key && (sort.direction === 'asc' ? ' ▲' : ' ▼')}
+                                            </button>
+                                        </th>
+                                    ))}
                                     <th>Action</th>
                                 </tr>
                             </thead>

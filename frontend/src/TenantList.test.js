@@ -16,13 +16,26 @@ beforeEach(() => {
 
 function SearchableTenantList() {
     const [search, setSearch] = useState('');
-    return <TenantList onViewLedger={() => {}} search={search} onSearchChange={setSearch} />;
+    const [sort, setSort] = useState({ column: null, direction: 'asc' });
+    return (
+        <TenantList
+            onViewLedger={() => {}}
+            search={search}
+            onSearchChange={setSearch}
+            sort={sort}
+            onSortChange={setSort}
+        />
+    );
 }
 
 async function renderAndSearch(text) {
     render(<SearchableTenantList />);
     await screen.findByText('Alice Wonderland');
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search tenants' }), { target: { value: text } });
+}
+
+function sortBy(label) {
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }));
 }
 
 function cellsFor(row) {
@@ -117,4 +130,66 @@ test('the summary follows the search', async () => {
     expect(screen.getByText(/Outstanding/)).toHaveTextContent(
         'Outstanding $1,240.10 · 1 owing · 0 in credit ($0.00) · 1 settled'
     );
+});
+
+test('keeps the order from the API until a column is sorted', async () => {
+    render(<SearchableTenantList />);
+
+    await screen.findByText('Alice Wonderland');
+    expect(visibleNames()).toEqual(['Alice Wonderland', 'Charlie Chaplin', 'Daisy Ridley', 'Yuki Anderson', 'Bob The Builder']);
+    expect(screen.getByRole('columnheader', { name: 'Balance' })).toHaveAttribute('aria-sort', 'none');
+});
+
+test('sorts by balance with the most owed first, then reverses', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    sortBy('Balance');
+    expect(visibleNames()).toEqual(['Bob The Builder', 'Daisy Ridley', 'Alice Wonderland', 'Charlie Chaplin', 'Yuki Anderson']);
+    expect(screen.getByRole('columnheader', { name: /Balance/ })).toHaveAttribute('aria-sort', 'descending');
+
+    sortBy('Balance');
+    expect(visibleNames()).toEqual(['Yuki Anderson', 'Alice Wonderland', 'Charlie Chaplin', 'Daisy Ridley', 'Bob The Builder']);
+    expect(screen.getByRole('columnheader', { name: /Balance/ })).toHaveAttribute('aria-sort', 'ascending');
+});
+
+test('sorts by name', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    sortBy('Name');
+
+    expect(visibleNames()).toEqual(['Alice Wonderland', 'Bob The Builder', 'Charlie Chaplin', 'Daisy Ridley', 'Yuki Anderson']);
+});
+
+test('sorts by PMS ID with tenants not in the PMS last in both directions', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    sortBy('PMS ID');
+    expect(visibleNames()).toEqual(['Alice Wonderland', 'Bob The Builder', 'Daisy Ridley', 'Yuki Anderson', 'Charlie Chaplin']);
+
+    sortBy('PMS ID');
+    expect(visibleNames()).toEqual(['Yuki Anderson', 'Daisy Ridley', 'Bob The Builder', 'Alice Wonderland', 'Charlie Chaplin']);
+});
+
+test('sorts units in natural order', async () => {
+    const units = ['A10', 'B1', 'A2'].map((unit, index) => (
+        { id: index + 1, name: `Tenant ${unit}`, unit, pms_tenant_id: index + 1, balance: '0.00' }
+    ));
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(units) }));
+    render(<SearchableTenantList />);
+    await screen.findByText('Tenant A10');
+
+    sortBy('Unit');
+
+    expect(visibleNames()).toEqual(['Tenant A2', 'Tenant A10', 'Tenant B1']);
+});
+
+test('sorts the tenants left by the search', async () => {
+    await renderAndSearch('c303');
+
+    sortBy('Balance');
+
+    expect(visibleNames()).toEqual(['Daisy Ridley', 'Charlie Chaplin']);
 });

@@ -53,3 +53,19 @@ test('the tenant search is kept when returning from a ledger', async () => {
     expect(screen.getByRole('searchbox', { name: 'Search tenants' })).toHaveValue('daisy');
     expect(screen.queryByText('Alice Wonderland')).not.toBeInTheDocument();
 });
+
+test('the tenant sort is kept when returning from a ledger', async () => {
+    render(<App />);
+
+    await screen.findByText('Alice Wonderland');
+    fireEvent.click(screen.getByRole('button', { name: 'Balance' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'View Ledger' })[0]);
+    await screen.findByText('Rent Charge - January');
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/tenants/4/ledger/');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to tenants' }));
+
+    await screen.findByText('Alice Wonderland');
+    const names = screen.getAllByRole('row').slice(1).map(row => within(row).getAllByRole('cell')[1].textContent);
+    expect(names).toEqual(['Daisy Ridley', 'Alice Wonderland']);
+    expect(screen.getByRole('columnheader', { name: /Balance/ })).toHaveAttribute('aria-sort', 'descending');
+});

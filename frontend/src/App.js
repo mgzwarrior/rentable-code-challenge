@@ -6,6 +6,7 @@ import TenantLedger from './TenantLedger';
 function App() {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState({ column: null, direction: 'asc' });
 
   return (
     <div className="App">
@@ -16,7 +17,13 @@ function App() {
         {selectedTenant ? (
           <TenantLedger tenant={selectedTenant} onBack={() => setSelectedTenant(null)} />
         ) : (
-          <TenantList onViewLedger={setSelectedTenant} search={search} onSearchChange={setSearch} />
+          <TenantList
+            onViewLedger={setSelectedTenant}
+            search={search}
+            onSearchChange={setSearch}
+            sort={sort}
+            onSortChange={setSort}
+          />
         )}
       </main>
     </div>

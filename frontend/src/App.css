@@ -195,3 +195,17 @@
 .tenant-list td.tenant-balance-settled {
   color: #555;
 }
+
+.sort-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  text-decoration: underline;
+}
