@@ -52,10 +52,12 @@ function matchesSearch(tenant, query) {
 }
 
 function summarize(tenants) {
-    const summary = { owedCents: 0, owing: 0, creditCents: 0, inCredit: 0, settled: 0 };
+    const summary = { owedCents: 0, owing: 0, creditCents: 0, inCredit: 0, settled: 0, notInPms: 0 };
     tenants.forEach(tenant => {
         const cents = toCents(tenant.balance);
-        if (cents > 0) {
+        if (tenant.pms_tenant_id === null) {
+            summary.notInPms += 1;
+        } else if (cents > 0) {
             summary.owedCents += cents;
             summary.owing += 1;
         } else if (cents < 0) {
@@ -68,10 +70,13 @@ function summarize(tenants) {
     return summary;
 }
 
-function balanceCell(balance) {
-    const cents = toCents(balance);
+function balanceCell(tenant) {
+    if (tenant.pms_tenant_id === null) {
+        return <td className="tenant-balance tenant-balance-settled">No ledger</td>;
+    }
+    const cents = toCents(tenant.balance);
     if (cents > 0) {
-        return <td className="tenant-balance">{formatMoney(balance)}</td>;
+        return <td className="tenant-balance">{formatMoney(tenant.balance)}</td>;
     }
     if (cents < 0) {
         return <td className="tenant-balance tenant-balance-credit">{formatMoney(-cents / 100)} credit</td>;
@@ -128,6 +133,7 @@ function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }
                         {' · '}{summary.owing} owing
                         {' · '}{summary.inCredit} in credit ({formatMoney(summary.creditCents / 100)})
                         {' · '}{summary.settled} settled
+                        {summary.notInPms > 0 && ` · ${summary.notInPms} not in PMS`}
                     </p>
                     {visibleTenants.length === 0 ? (
                         <p>No tenants match "{search.trim()}".</p>
@@ -152,7 +158,7 @@ function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }
                                         <td>{tenant.pms_tenant_id ?? <NotInPmsBadge />}</td>
                                         <td>{tenant.name}</td>
                                         <td>{tenant.unit}</td>
-                                        {balanceCell(tenant.balance)}
+                                        {balanceCell(tenant)}
                                         <td><button onClick={() => onViewLedger(tenant)}>View Ledger</button></td>
                                     </tr>
                                 ))}

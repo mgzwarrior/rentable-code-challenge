@@ -91,6 +91,8 @@ test('shows a message when the tenant has no transactions', async () => {
     expect(await screen.findByText('No transactions for this tenant.')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getByText('Not in PMS')).toBeInTheDocument();
+    expect(summaryValue('No ledger')).toBe('$0.00');
+    expect(screen.queryByText('Settled')).not.toBeInTheDocument();
     expect(screen.queryByText(/PMS ID/)).not.toBeInTheDocument();
 });
 

@@ -3,7 +3,10 @@ import NotInPmsBadge from './NotInPmsBadge';
 import { formatMoney } from './money';
 import { saveBlob } from './download';
 
-function balanceSummary(balance) {
+function balanceSummary(tenant, balance) {
+    if (tenant.pms_tenant_id === null) {
+        return { label: 'No ledger', className: 'ledger-balance-settled' };
+    }
     const value = Number(balance);
     if (value > 0) {
         return { label: 'Balance owed', className: 'ledger-balance-owed' };
@@ -63,7 +66,7 @@ function TenantLedger({ tenant, onBack }) {
             });
     }
 
-    const balance = ledger && balanceSummary(ledger.balance);
+    const balance = ledger && balanceSummary(tenant, ledger.balance);
 
     return (
         <div className="tenant-ledger">

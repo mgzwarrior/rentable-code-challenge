@@ -101,14 +101,14 @@ test('says so when nothing matches', async () => {
     expect(screen.getByText('Showing 0 of 5 tenants')).toBeInTheDocument();
 });
 
-test('shows each tenant\'s balance as owed, credit or settled', async () => {
+test('shows each tenant\'s balance as owed, credit, settled or no ledger', async () => {
     render(<SearchableTenantList />);
 
     await screen.findByText('Alice Wonderland');
     const balances = screen.getAllByRole('row').slice(1).map(row => cellsFor(row).slice(1, 4).filter((_, i) => i !== 1));
     expect(balances).toEqual([
         ['Alice Wonderland', 'Settled'],
-        ['Charlie Chaplin', 'Settled'],
+        ['Charlie Chaplin', 'No ledger'],
         ['Daisy Ridley', '$1,240.10'],
         ['Yuki Anderson', '$550.00 credit'],
         ['Bob The Builder', '$2,425.20'],
@@ -120,7 +120,7 @@ test('summarizes the balances of all tenants', async () => {
 
     await screen.findByText('Alice Wonderland');
     expect(screen.getByText(/Outstanding/)).toHaveTextContent(
-        'Outstanding $3,665.30 · 2 owing · 1 in credit ($550.00) · 2 settled'
+        'Outstanding $3,665.30 · 2 owing · 1 in credit ($550.00) · 1 settled · 1 not in PMS'
     );
 });
 
@@ -128,7 +128,7 @@ test('the summary follows the search', async () => {
     await renderAndSearch('c303');
 
     expect(screen.getByText(/Outstanding/)).toHaveTextContent(
-        'Outstanding $1,240.10 · 1 owing · 0 in credit ($0.00) · 1 settled'
+        'Outstanding $1,240.10 · 1 owing · 0 in credit ($0.00) · 0 settled · 1 not in PMS'
     );
 });
 
@@ -192,4 +192,12 @@ test('sorts the tenants left by the search', async () => {
     sortBy('Balance');
 
     expect(visibleNames()).toEqual(['Daisy Ridley', 'Charlie Chaplin']);
+});
+
+test('the summary only mentions tenants not in the PMS when there are some', async () => {
+    await renderAndSearch('alice');
+
+    expect(screen.getByText(/Outstanding/)).toHaveTextContent(
+        /^Outstanding \$0\.00 · 0 owing · 0 in credit \(\$0\.00\) · 1 settled$/
+    );
 });
