@@ -7,6 +7,7 @@ function App() {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ column: null, direction: 'asc' });
+  const [hideSettled, setHideSettled] = useState(false);
 
   return (
     <div className="App">
@@ -23,6 +24,8 @@ function App() {
             onSearchChange={setSearch}
             sort={sort}
             onSortChange={setSort}
+            hideSettled={hideSettled}
+            onHideSettledChange={setHideSettled}
           />
         )}
       </main>

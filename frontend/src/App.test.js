@@ -69,3 +69,17 @@ test('the tenant sort is kept when returning from a ledger', async () => {
     expect(names).toEqual(['Daisy Ridley', 'Alice Wonderland']);
     expect(screen.getByRole('columnheader', { name: /Balance/ })).toHaveAttribute('aria-sort', 'descending');
 });
+
+test('hiding settled accounts is kept when returning from a ledger', async () => {
+    render(<App />);
+
+    await screen.findByText('Alice Wonderland');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Hide settled accounts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View Ledger' }));
+    await screen.findByText('Rent Charge - January');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to tenants' }));
+
+    expect(await screen.findByText('Daisy Ridley')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Hide settled accounts' })).toBeChecked();
+    expect(screen.queryByText('Alice Wonderland')).not.toBeInTheDocument();
+});

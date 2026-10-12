@@ -17,6 +17,7 @@ beforeEach(() => {
 function SearchableTenantList() {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState({ column: null, direction: 'asc' });
+    const [hideSettled, setHideSettled] = useState(false);
     return (
         <TenantList
             onViewLedger={() => {}}
@@ -24,6 +25,8 @@ function SearchableTenantList() {
             onSearchChange={setSearch}
             sort={sort}
             onSortChange={setSort}
+            hideSettled={hideSettled}
+            onHideSettledChange={setHideSettled}
         />
     );
 }
@@ -36,6 +39,10 @@ async function renderAndSearch(text) {
 
 function sortBy(label) {
     fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${label}`) }));
+}
+
+function hideSettledAccounts() {
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Hide settled accounts' }));
 }
 
 function cellsFor(row) {
@@ -200,4 +207,62 @@ test('the summary only mentions tenants not in the PMS when there are some', asy
     expect(screen.getByText(/Outstanding/)).toHaveTextContent(
         /^Outstanding \$0\.00 · 0 owing · 0 in credit \(\$0\.00\) · 1 settled$/
     );
+});
+
+test('settled accounts are shown until they are hidden', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    expect(screen.getByRole('checkbox', { name: 'Hide settled accounts' })).not.toBeChecked();
+    expect(visibleNames()).toContain('Alice Wonderland');
+    expect(screen.getByText('Showing 5 of 5 tenants')).toBeInTheDocument();
+});
+
+test('hiding settled accounts removes them and says how many are hidden', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    hideSettledAccounts();
+
+    expect(visibleNames()).toEqual(['Charlie Chaplin', 'Daisy Ridley', 'Yuki Anderson', 'Bob The Builder']);
+    expect(screen.getByText('Showing 4 of 5 tenants · 1 settled hidden')).toBeInTheDocument();
+});
+
+test('a tenant not in the PMS is not treated as settled', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    hideSettledAccounts();
+
+    expect(screen.getByRole('row', { name: /Charlie Chaplin/ })).toHaveTextContent('No ledger');
+});
+
+test('the summary still counts settled accounts while they are hidden', async () => {
+    render(<SearchableTenantList />);
+    await screen.findByText('Alice Wonderland');
+
+    hideSettledAccounts();
+
+    expect(screen.getByText(/Outstanding/)).toHaveTextContent(
+        'Outstanding $3,665.30 · 2 owing · 1 in credit ($550.00) · 1 settled · 1 not in PMS'
+    );
+});
+
+test('hiding settled accounts works with search and sort', async () => {
+    await renderAndSearch('c303');
+    hideSettledAccounts();
+    sortBy('Name');
+
+    expect(visibleNames()).toEqual(['Charlie Chaplin', 'Daisy Ridley']);
+    expect(screen.getByText('Showing 2 of 5 tenants')).toBeInTheDocument();
+});
+
+test('explains when every matching tenant is hidden as settled', async () => {
+    await renderAndSearch('alice');
+
+    hideSettledAccounts();
+
+    expect(screen.getByText('No tenants to show. 1 settled account hidden.')).toBeInTheDocument();
+    expect(screen.queryByText(/No tenants match/)).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 0 of 5 tenants · 1 settled hidden')).toBeInTheDocument();
 });

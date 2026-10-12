@@ -51,6 +51,10 @@ function matchesSearch(tenant, query) {
         .some(value => String(value).toLowerCase().includes(query));
 }
 
+function isSettled(tenant) {
+    return tenant.pms_tenant_id !== null && toCents(tenant.balance) === 0;
+}
+
 function summarize(tenants) {
     const summary = { owedCents: 0, owing: 0, creditCents: 0, inCredit: 0, settled: 0, notInPms: 0 };
     tenants.forEach(tenant => {
@@ -84,7 +88,7 @@ function balanceCell(tenant) {
     return <td className="tenant-balance tenant-balance-settled">Settled</td>;
 }
 
-function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }) {
+function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange, hideSettled, onHideSettledChange }) {
     const [tenants, setTenants] = useState([]);
     const [error, setError] = useState(null);
 
@@ -108,8 +112,11 @@ function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }
     }
 
     const query = search.trim().toLowerCase();
-    const visibleTenants = sortTenants(tenants.filter(tenant => matchesSearch(tenant, query)), sort);
-    const summary = summarize(visibleTenants);
+    const matchingTenants = tenants.filter(tenant => matchesSearch(tenant, query));
+    const summary = summarize(matchingTenants);
+    const shownTenants = hideSettled ? matchingTenants.filter(tenant => !isSettled(tenant)) : matchingTenants;
+    const hiddenCount = matchingTenants.length - shownTenants.length;
+    const visibleTenants = sortTenants(shownTenants, sort);
 
     return (
         <div className="tenant-list">
@@ -126,7 +133,18 @@ function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }
                             value={search}
                             onChange={event => onSearchChange(event.target.value)}
                         />
-                        <span>Showing {visibleTenants.length} of {tenants.length} tenants</span>
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={hideSettled}
+                                onChange={event => onHideSettledChange(event.target.checked)}
+                            />
+                            Hide settled accounts
+                        </label>
+                        <span className="tenant-count">
+                            Showing {visibleTenants.length} of {tenants.length} tenants
+                            {hiddenCount > 0 && ` · ${hiddenCount} settled hidden`}
+                        </span>
                     </div>
                     <p className="tenant-summary">
                         Outstanding <strong>{formatMoney(summary.owedCents / 100)}</strong>
@@ -136,7 +154,11 @@ function TenantList({ onViewLedger, search, onSearchChange, sort, onSortChange }
                         {summary.notInPms > 0 && ` · ${summary.notInPms} not in PMS`}
                     </p>
                     {visibleTenants.length === 0 ? (
-                        <p>No tenants match "{search.trim()}".</p>
+                        hiddenCount > 0 ? (
+                            <p>No tenants to show. {hiddenCount} settled {hiddenCount === 1 ? 'account' : 'accounts'} hidden.</p>
+                        ) : (
+                            <p>No tenants match "{search.trim()}".</p>
+                        )
                     ) : (
                         <table>
                             <thead>
