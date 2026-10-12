@@ -19,11 +19,18 @@ def welcome_message(request):
 @api_view(['GET'])
 def tenant_list(request):
     """
-    Returns a list of all tenants.
+    Returns a list of all tenants with their balance.
+    A positive balance is the amount the tenant owes.
     """
-    tenants = Tenant.objects.all()
-    serializer = TenantSerializer(tenants, many=True)
-    return Response(serializer.data)
+    tenants = []
+    for tenant in Tenant.objects.prefetch_related('transactions'):
+        entry = TenantSerializer(tenant).data
+        entry['balance'] = str(sum(
+            (transaction.signed_amount for transaction in tenant.transactions.all()),
+            Decimal('0.00'),
+        ))
+        tenants.append(entry)
+    return Response(tenants)
 
 @api_view(['GET'])
 def transaction_list(request):
@@ -43,22 +50,18 @@ def tenant_ledger(request, tenant_id):
     """
     tenant = get_object_or_404(Tenant, id=tenant_id)
     totals = {Transaction.CHARGE: Decimal('0.00'), Transaction.PAYMENT: Decimal('0.00')}
-
-    def balance():
-        return str(totals[Transaction.CHARGE] - totals[Transaction.PAYMENT])
-
+    balance = Decimal('0.00')
     entries = []
     for transaction in tenant.transactions.order_by('date', 'id'):
-        if transaction.type not in totals:
-            raise ValueError(f'Unknown transaction type: {transaction.type!r}')
+        balance += transaction.signed_amount
         totals[transaction.type] += transaction.amount
         entry = TransactionSerializer(transaction).data
-        entry['running_balance'] = balance()
+        entry['running_balance'] = str(balance)
         entries.append(entry)
     return Response({
         'tenant': TenantSerializer(tenant).data,
         'total_charges': str(totals[Transaction.CHARGE]),
         'total_payments': str(totals[Transaction.PAYMENT]),
-        'balance': balance(),
+        'balance': str(balance),
         'transactions': entries,
     })

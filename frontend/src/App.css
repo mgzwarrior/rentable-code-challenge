@@ -170,3 +170,28 @@
   padding: 8px;
   font-size: 1rem;
 }
+
+.tenant-summary {
+  width: 80%;
+  margin: 12px auto 0;
+  text-align: left;
+  color: #555;
+}
+
+.tenant-summary strong {
+  color: #b42318;
+}
+
+.tenant-list th.tenant-balance,
+.tenant-list td.tenant-balance {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tenant-list td.tenant-balance-credit {
+  color: #1b7f3b;
+}
+
+.tenant-list td.tenant-balance-settled {
+  color: #555;
+}

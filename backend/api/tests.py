@@ -103,3 +103,58 @@ class TenantLedgerTests(TestCase):
 
         with self.assertRaises(ValueError):
             self.get_ledger()
+
+
+class TenantListBalanceTests(TestCase):
+    def setUp(self):
+        self.daisy = Tenant.objects.create(name='Daisy Ridley', unit='C303', pms_tenant_id=3)
+        self.charlie = Tenant.objects.create(name='Charlie Chaplin', unit='C303')
+        self.next_pms_transaction_id = 1
+
+    def add_transaction(self, tenant, type, amount):
+        Transaction.objects.create(
+            tenant=tenant,
+            pms_transaction_id=str(self.next_pms_transaction_id),
+            date='2023-01-01',
+            type=type,
+            description='Test',
+            amount=Decimal(amount),
+        )
+        self.next_pms_transaction_id += 1
+
+    def balances(self):
+        return {tenant['name']: tenant['balance'] for tenant in self.client.get('/api/tenants/').json()}
+
+    def test_each_tenant_has_its_own_balance(self):
+        self.add_transaction(self.daisy, Transaction.CHARGE, '1300.00')
+        self.add_transaction(self.daisy, Transaction.PAYMENT, '60.00')
+        self.add_transaction(self.charlie, Transaction.PAYMENT, '25.00')
+
+        self.assertEqual(self.balances(), {'Daisy Ridley': '1240.00', 'Charlie Chaplin': '-25.00'})
+
+    def test_tenant_without_transactions_has_zero_balance(self):
+        self.assertEqual(self.balances()['Charlie Chaplin'], '0.00')
+
+    def test_balance_matches_the_tenant_ledger(self):
+        self.add_transaction(self.daisy, Transaction.CHARGE, '1300.00')
+        self.add_transaction(self.daisy, Transaction.CHARGE, '-80.00')
+        self.add_transaction(self.daisy, Transaction.PAYMENT, '1300.00')
+        self.add_transaction(self.daisy, Transaction.PAYMENT, '-1300.00')
+
+        ledger = self.client.get(f'/api/tenants/{self.daisy.id}/ledger/').json()
+
+        self.assertEqual(self.balances()['Daisy Ridley'], ledger['balance'])
+        self.assertEqual(ledger['balance'], '1220.00')
+
+    def test_existing_tenant_fields_are_unchanged(self):
+        tenant = next(t for t in self.client.get('/api/tenants/').json() if t['name'] == 'Daisy Ridley')
+
+        self.assertEqual(tenant, {
+            'id': self.daisy.id, 'name': 'Daisy Ridley', 'unit': 'C303', 'pms_tenant_id': 3, 'balance': '0.00',
+        })
+
+    def test_unknown_transaction_type_fails_instead_of_guessing(self):
+        self.add_transaction(self.daisy, 'adjustment', '100.00')
+
+        with self.assertRaises(ValueError):
+            self.client.get('/api/tenants/')

@@ -2,8 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 
 const tenants = [
-    { id: 1, name: 'Alice Wonderland', unit: 'A101', pms_tenant_id: 1 },
-    { id: 4, name: 'Daisy Ridley', unit: 'C303', pms_tenant_id: 3 },
+    { id: 1, name: 'Alice Wonderland', unit: 'A101', pms_tenant_id: 1, balance: '0.00' },
+    { id: 4, name: 'Daisy Ridley', unit: 'C303', pms_tenant_id: 3, balance: '1300.00' },
 ];
 
 const ledger = {

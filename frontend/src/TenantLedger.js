@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import NotInPmsBadge from './NotInPmsBadge';
-
-const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
-function formatMoney(amount) {
-    return currency.format(Number(amount));
-}
+import { formatMoney } from './money';
 
 function balanceSummary(balance) {
     const value = Number(balance);
