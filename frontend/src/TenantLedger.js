@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import NotInPmsBadge from './NotInPmsBadge';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -55,8 +56,7 @@ function TenantLedger({ tenant, onBack }) {
             <button onClick={onBack}>Back to tenants</button>
             <h2>{tenant.name}</h2>
             <p className="tenant-ledger-meta">
-                Unit {tenant.unit}
-                {tenant.pms_tenant_id !== null && ` · PMS ID ${tenant.pms_tenant_id}`}
+                Unit {tenant.unit} · {tenant.pms_tenant_id === null ? <NotInPmsBadge /> : `PMS ID ${tenant.pms_tenant_id}`}
             </p>
             {error ? (
                 <div>Error loading ledger: {error.message}</div>

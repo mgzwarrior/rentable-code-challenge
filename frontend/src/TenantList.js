@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import NotInPmsBadge from './NotInPmsBadge';
 
 function TenantList({ onViewLedger }) {
     const [tenants, setTenants] = useState([]);
@@ -32,7 +33,7 @@ function TenantList({ onViewLedger }) {
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>PMS ID</th>
                             <th>Name</th>
                             <th>Unit</th>
                             <th>Action</th>
@@ -41,7 +42,7 @@ function TenantList({ onViewLedger }) {
                     <tbody>
                         {tenants.map(tenant => (
                             <tr key={tenant.id}>
-                                <td>{tenant.id}</td>
+                                <td>{tenant.pms_tenant_id ?? <NotInPmsBadge />}</td>
                                 <td>{tenant.name}</td>
                                 <td>{tenant.unit}</td>
                                 <td><button onClick={() => onViewLedger(tenant)}>View Ledger</button></td>

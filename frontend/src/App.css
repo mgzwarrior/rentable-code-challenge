@@ -142,3 +142,15 @@
 .tenant-ledger td.ledger-negative {
   color: #b42318;
 }
+
+.badge-not-in-pms {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #b54708;
+  border-radius: 10px;
+  background-color: #fffaeb;
+  color: #b54708;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
