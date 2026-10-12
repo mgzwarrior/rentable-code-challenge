@@ -38,6 +38,12 @@ def transaction_list(request):
     Returns a list of transactions, optionally filtered by tenant.
     """
     transactions = Transaction.objects.all()
+    tenant_id = request.query_params.get('tenant')
+    if tenant_id is not None:
+        try:
+            transactions = transactions.filter(tenant_id=int(tenant_id))
+        except ValueError:
+            return Response({'tenant': 'Must be a tenant ID.'}, status=status.HTTP_400_BAD_REQUEST)
     serializer = TransactionSerializer(transactions, many=True)
     return Response(serializer.data)
 

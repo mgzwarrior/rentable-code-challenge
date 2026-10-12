@@ -158,3 +158,42 @@ class TenantListBalanceTests(TestCase):
 
         with self.assertRaises(ValueError):
             self.client.get('/api/tenants/')
+
+
+class TransactionListFilterTests(TestCase):
+    def setUp(self):
+        self.daisy = Tenant.objects.create(name='Daisy Ridley', unit='C303', pms_tenant_id=3)
+        self.bob = Tenant.objects.create(name='Bob The Builder', unit='B205', pms_tenant_id=2)
+        for pms_transaction_id, tenant in [('1', self.daisy), ('2', self.daisy), ('3', self.bob)]:
+            Transaction.objects.create(
+                tenant=tenant,
+                pms_transaction_id=pms_transaction_id,
+                date='2023-01-01',
+                type=Transaction.CHARGE,
+                description='Test',
+                amount=Decimal('100.00'),
+            )
+
+    def test_returns_all_transactions_without_a_filter(self):
+        response = self.client.get('/api/transactions/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 3)
+
+    def test_filters_by_tenant(self):
+        response = self.client.get('/api/transactions/', {'tenant': self.daisy.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([t['tenant'] for t in response.json()], [self.daisy.id, self.daisy.id])
+
+    def test_unknown_tenant_returns_no_transactions(self):
+        response = self.client.get('/api/transactions/', {'tenant': 999999})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
+    def test_non_numeric_tenant_is_rejected(self):
+        response = self.client.get('/api/transactions/', {'tenant': 'abc'})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {'tenant': 'Must be a tenant ID.'})
