@@ -83,6 +83,13 @@ class TenantLedgerTests(TestCase):
             [('Earlier', '1000.00'), ('Same day', '600.00'), ('Later', '1100.00')],
         )
 
+    def test_transactions_include_their_pms_transaction_id(self):
+        transaction = self.add_transaction('2023-01-01', Transaction.CHARGE, '1300.00')
+
+        transactions = self.get_ledger().json()['transactions']
+
+        self.assertEqual(transactions[0]['pms_transaction_id'], transaction.pms_transaction_id)
+
     def test_ledger_only_includes_the_requested_tenant(self):
         other_tenant = Tenant.objects.create(name='Bob The Builder', unit='B205', pms_tenant_id=2)
         self.add_transaction('2023-01-01', Transaction.CHARGE, '1300.00')

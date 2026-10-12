@@ -9,4 +9,4 @@ class TenantSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['id', 'tenant', 'date', 'type', 'description', 'amount'] 
+        fields = ['id', 'tenant', 'pms_transaction_id', 'date', 'type', 'description', 'amount'] 

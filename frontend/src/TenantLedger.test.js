@@ -10,9 +10,9 @@ function ledgerResponse(overrides) {
         total_payments: '800.00',
         balance: '420.00',
         transactions: [
-            { id: 1, date: '2023-01-01', type: 'charge', description: 'Rent Charge - January', amount: '1300.00', running_balance: '1300.00' },
-            { id: 2, date: '2023-01-03', type: 'payment', description: 'Rent Payment - January', amount: '800.00', running_balance: '500.00' },
-            { id: 3, date: '2023-03-05', type: 'charge', description: 'Utility Credit', amount: '-80.00', running_balance: '420.00' },
+            { id: 1, pms_transaction_id: '16', date: '2023-01-01', type: 'charge', description: 'Rent Charge - January', amount: '1300.00', running_balance: '1300.00' },
+            { id: 2, pms_transaction_id: '17', date: '2023-01-03', type: 'payment', description: 'Rent Payment - January', amount: '800.00', running_balance: '500.00' },
+            { id: 3, pms_transaction_id: '20', date: '2023-03-05', type: 'charge', description: 'Utility Credit', amount: '-80.00', running_balance: '420.00' },
         ],
         ...overrides,
     };
@@ -48,7 +48,7 @@ test('shows the tenant, totals and balance', async () => {
     expect(summaryValue('Balance owed')).toBe('$420.00');
 });
 
-test('lists transactions with charge, payment and running balance columns', async () => {
+test('lists transactions with their PMS transaction ID, charge, payment and running balance', async () => {
     mockFetch(ledgerResponse());
 
     render(<TenantLedger tenant={tenant} onBack={() => {}} />);
@@ -56,9 +56,9 @@ test('lists transactions with charge, payment and running balance columns', asyn
     const rows = (await screen.findAllByRole('row')).slice(1);
     const cells = rows.map(row => within(row).getAllByRole('cell').map(cell => cell.textContent));
     expect(cells).toEqual([
-        ['2023-01-01', 'Rent Charge - January', '$1,300.00', '', '$1,300.00'],
-        ['2023-01-03', 'Rent Payment - January', '', '$800.00', '$500.00'],
-        ['2023-03-05', 'Utility Credit', '-$80.00', '', '$420.00'],
+        ['2023-01-01', '16', 'Rent Charge - January', '$1,300.00', '', '$1,300.00'],
+        ['2023-01-03', '17', 'Rent Payment - January', '', '$800.00', '$500.00'],
+        ['2023-03-05', '20', 'Utility Credit', '-$80.00', '', '$420.00'],
     ]);
 });
 

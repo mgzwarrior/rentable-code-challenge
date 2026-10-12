@@ -80,6 +80,7 @@ function TenantLedger({ tenant, onBack }) {
                             <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Transaction ID</th>
                                     <th>Description</th>
                                     <th className="ledger-amount">Charge</th>
                                     <th className="ledger-amount">Payment</th>
@@ -90,6 +91,7 @@ function TenantLedger({ tenant, onBack }) {
                                 {ledger.transactions.map(transaction => (
                                     <tr key={transaction.id}>
                                         <td>{transaction.date}</td>
+                                        <td>{transaction.pms_transaction_id}</td>
                                         <td>{transaction.description}</td>
                                         {amountCell(transaction, 'charge', 'ledger-charge')}
                                         {amountCell(transaction, 'payment', 'ledger-payment')}
