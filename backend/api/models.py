@@ -12,6 +12,9 @@ class Tenant(models.Model):
         return self.name
 
 class Transaction(models.Model):
+    CHARGE = 'charge'
+    PAYMENT = 'payment'
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='transactions')
     pms_transaction_id = models.CharField(max_length=64, unique=True)
     date = models.DateField()
