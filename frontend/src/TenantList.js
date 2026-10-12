@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-function TenantList() {
+function TenantList({ onViewLedger }) {
     const [tenants, setTenants] = useState([]);
     const [error, setError] = useState(null);
 
@@ -44,7 +44,7 @@ function TenantList() {
                                 <td>{tenant.id}</td>
                                 <td>{tenant.name}</td>
                                 <td>{tenant.unit}</td>
-                                <td><button>View Ledger</button></td>
+                                <td><button onClick={() => onViewLedger(tenant)}>View Ledger</button></td>
                             </tr>
                         ))}
                     </tbody>
