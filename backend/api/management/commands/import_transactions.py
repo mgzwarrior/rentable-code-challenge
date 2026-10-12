@@ -33,7 +33,7 @@ class Command(BaseCommand):
 
             for transaction_data in tenant_data.get('ledger', []):
                 Transaction.objects.update_or_create(
-                    id=transaction_data.get('id'),
+                    pms_transaction_id=transaction_data.get('id'),
                     defaults={
                         'tenant': tenant,
                         'date': datetime.strptime(transaction_data.get('date'), '%Y-%m-%d').date(),

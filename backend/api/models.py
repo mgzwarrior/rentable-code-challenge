@@ -13,6 +13,7 @@ class Tenant(models.Model):
 
 class Transaction(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='transactions')
+    pms_transaction_id = models.CharField(max_length=64, unique=True)
     date = models.DateField()
     description = models.CharField(max_length=255)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
