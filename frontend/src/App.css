@@ -68,4 +68,152 @@
   to {
     transform: rotate(360deg);
   }
-} 
+}
+
+.tenant-ledger {
+  width: 80%;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.tenant-ledger-meta {
+  color: #555;
+}
+
+.ledger-summary {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.ledger-summary-item {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+.ledger-summary-label {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.ledger-summary-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-balance-owed .ledger-summary-value {
+  color: #b42318;
+}
+
+.ledger-balance-credit .ledger-summary-value {
+  color: #1b7f3b;
+}
+
+.tenant-ledger table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tenant-ledger th,
+.tenant-ledger td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.tenant-ledger th {
+  background-color: #f2f2f2;
+  color: #333;
+}
+
+.tenant-ledger th.ledger-amount,
+.tenant-ledger td.ledger-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tenant-ledger td.ledger-payment {
+  color: #1b7f3b;
+}
+
+.tenant-ledger td.ledger-negative {
+  color: #b42318;
+}
+
+.badge-not-in-pms {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #b54708;
+  border-radius: 10px;
+  background-color: #fffaeb;
+  color: #b54708;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tenant-search {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 80%;
+  margin: 0 auto;
+  color: #555;
+}
+
+.tenant-search input[type="search"] {
+  flex: 0 1 320px;
+  padding: 8px;
+  font-size: 1rem;
+}
+
+.tenant-count {
+  margin-left: auto;
+}
+
+.tenant-summary {
+  width: 80%;
+  margin: 12px auto 0;
+  text-align: left;
+  color: #555;
+}
+
+.tenant-summary strong {
+  color: #b42318;
+}
+
+.tenant-list th.tenant-balance,
+.tenant-list td.tenant-balance {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tenant-list td.tenant-balance-credit {
+  color: #1b7f3b;
+}
+
+.tenant-list td.tenant-balance-settled {
+  color: #555;
+}
+
+.sort-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  text-decoration: underline;
+}
+
+.ledger-actions {
+  display: flex;
+  justify-content: space-between;
+}

@@ -1,5 +1,7 @@
 # Rentable Full Stack Code Challenge
 
+> **Reviewing this submission?** Start with the [Solution Guide](SOLUTION.md).
+
 ## Table of Contents
 * [Project Overview](#project-overview)
     * [Simulated PMS API](#simulated-pms-api)
@@ -32,9 +34,18 @@ Tenant and transaction data comes from a simulated external Property Management 
 
 ## Getting Started
 
-This repo includes a [Dev Container](https://containers.dev/) config (`.devcontainer/`). It's the quickest way to get running: the container installs dependencies, migrates, and seeds the database for you. Not using Dev Containers? `.devcontainer/post_create.sh` shows what you'd need to do yourself.
+This repo includes a [Dev Container](https://containers.dev/) config (`.devcontainer/`). It's the quickest way to get running: the container installs dependencies, migrates, seeds the database, and imports tenants and their ledgers from the PMS integration API for you. Not using Dev Containers? `.devcontainer/post_create.sh` shows what you'd need to do yourself.
 
 Once set up, run `./start.sh` from the project root. The backend runs at [`http://127.0.0.1:8009/`](http://127.0.0.1:8009/) and the frontend at [`http://localhost:3009/`](http://localhost:3009/).
+
+Ledger data comes from the PMS integration API. To refresh it at any time, run `python manage.py import_transactions` from the `backend` directory. A tenant's ledger is empty until this has been run.
+
+To run the tests:
+
+```bash
+cd backend && python manage.py test api
+cd frontend && CI=true npm test -- --watchAll=false
+```
 
 ## The Challenge
 
